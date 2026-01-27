@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.1.1...v0.2.0) (2026-01-27)
+
+
+### Features
+
+* format generated typed files with ruff after creation ([3eedb37](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/3eedb3722cfba94e1a63e6305acb5dbdfe88721a))
+
 ## [0.1.1](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.1.0...v0.1.1) (2026-01-27)
 
 
