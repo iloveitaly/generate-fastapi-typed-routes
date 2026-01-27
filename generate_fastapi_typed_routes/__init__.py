@@ -1,12 +1,14 @@
-from pathlib import Path
-from types import ModuleType
+"""Auto-generated typed url_path_for functions for FastAPI apps."""
+
+import json
+import os
 import shutil
 import subprocess
 import sys
+from pathlib import Path
+from typing import Literal
 
 import click
-from fastapi import FastAPI
-from fastapi.routing import APIRoute
 from jinja2 import Template
 from pydantic import BaseModel
 from structlog_config import configure_logger
@@ -35,6 +37,70 @@ def {{ app_info.prefix }}_url_path_for(name: str, **path_params) -> str:
 {% endfor %}
 '''
 
+EXTRACTOR_SCRIPT = """
+import sys
+import json
+import importlib
+from fastapi import FastAPI
+from fastapi.routing import APIRoute
+
+def extract_routes(app_module_str):
+    try:
+        if ":" not in app_module_str:
+             raise ValueError(f"Invalid format '{app_module_str}', expected 'module:app'")
+        module_path, app_name = app_module_str.split(":")
+        
+        # Ensure we can import the module
+        try:
+            module = importlib.import_module(module_path)
+        except ImportError as e:
+            # Try adding current directory to path if not found, though PYTHONPATH should handle this
+            print(f"ImportError importing {module_path}: {e}", file=sys.stderr)
+            raise
+
+        if not hasattr(module, app_name):
+            raise AttributeError(f"Module '{module_path}' has no attribute '{app_name}'")
+            
+        app = getattr(module, app_name)
+    except Exception as e:
+        # Print error but don't exit yet if we want to handle others? 
+        # For now fail fast.
+        print(f"Error loading {app_module_str}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    if not isinstance(app, FastAPI):
+        print(f"{app_module_str} is not a FastAPI app", file=sys.stderr)
+        sys.exit(1)
+
+    routes = []
+    for route in app.routes:
+        if isinstance(route, APIRoute) and route.name:
+            routes.append({
+                "name": route.name,
+                "path": route.path
+            })
+    # Sort by name
+    routes.sort(key=lambda x: x["name"])
+    
+    return {
+        "import_path": module_path,
+        "name": app_name,
+        "routes": routes
+    }
+
+def main():
+    app_modules = sys.argv[1:]
+    results = []
+    for app_mod in app_modules:
+        info = extract_routes(app_mod)
+        results.append(info)
+    
+    print(json.dumps(results))
+
+if __name__ == "__main__":
+    main()
+"""
+
 
 class RouteInfo(BaseModel):
     name: str
@@ -48,55 +114,86 @@ class AppInfo(BaseModel):
     routes: list[RouteInfo]
 
 
-def extract_routes(app: FastAPI) -> list[RouteInfo]:
-    """Extract route information from a FastAPI app."""
-    routes: list[RouteInfo] = []
+def get_apps_info(
+    app_modules: tuple[str, ...],
+    prefixes: list[str | None],
+    directory: Path
+) -> list[AppInfo]:
+    """Load FastAPI apps and extract information using a subprocess."""
+    
+    # Prepare environment for subprocess
+    env = os.environ.copy()
+    # Add directory to PYTHONPATH so imports work
+    current_pythonpath = env.get("PYTHONPATH", "")
+    directory_str = str(directory.resolve())
+    env["PYTHONPATH"] = (
+        f"{directory_str}{os.pathsep}{current_pythonpath}"
+        if current_pythonpath
+        else directory_str
+    )
 
-    for route in app.routes:
-        if not isinstance(route, APIRoute):
-            continue
+    cmd = [sys.executable, "-c", EXTRACTOR_SCRIPT, *app_modules]
 
-        if not route.name:
-            continue
+    log.info(
+        "running_subprocess",
+        cmd=cmd,
+        directory=directory_str,
+    )
 
-        routes.append(
-            RouteInfo(
-                name=route.name,
-                path=route.path,
+    try:
+        result = subprocess.run(
+            cmd,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,  # We handle return code manually
+        )
+    except Exception as e:
+        raise click.ClickException(f"Failed to execute extractor subprocess: {e}")
+
+    if result.returncode != 0:
+        error_msg = result.stderr.strip()
+        log.error("subprocess_failed", exit_code=result.returncode, stderr=error_msg)
+        
+        msg = f"Failed to extract routes.\nError: {error_msg}"
+        if "ModuleNotFoundError" in error_msg or "ImportError" in error_msg:
+             msg += "\n\nHint: It looks like the application module could not be found or imported."
+             msg += "\nIf you are running this tool via 'uvx' or 'pipx', the application dependencies might not be available."
+             msg += "\nTry running inside your project environment (e.g., 'uv run generate-fastapi-typed-routes ...')."
+        
+        raise click.ClickException(msg)
+
+    try:
+        data = json.loads(result.stdout)
+    except json.JSONDecodeError:
+         log.error("json_decode_failed", stdout=result.stdout)
+         raise click.ClickException(f"Failed to parse output from extractor: {result.stdout}")
+
+    apps_info = []
+    for i, app_data in enumerate(data):
+        import_path = app_data["import_path"]
+        name = app_data["name"]
+        routes_data = app_data["routes"]
+        
+        # Determine prefix
+        prefix = prefixes[i]
+        if prefix is None:
+            prefix = name
+            log.info("using_default_prefix", prefix=prefix)
+            
+        routes = [RouteInfo(**r) for r in routes_data]
+        
+        apps_info.append(
+            AppInfo(
+                import_path=import_path,
+                name=name,
+                prefix=prefix,
+                routes=routes,
             )
         )
-
-    # Sort for consistent output
-    routes.sort(key=lambda x: x.name)
-
-    log.info("extracted_routes", count=len(routes))
-    return routes
-
-
-def load_app(app_module: str, prefix: str | None) -> AppInfo:
-    """Load a FastAPI app and extract its information."""
-    module_path, app_name = app_module.split(":")
-    module: ModuleType = __import__(module_path, fromlist=[app_name])
-    app = getattr(module, app_name)
-
-    if not isinstance(app, FastAPI):
-        raise click.ClickException(f"{app_module} is not a FastAPI app")
-
-    log.info("app_loaded", module=module_path, app=app_name)
-
-    routes = extract_routes(app)
-
-    # Determine prefix - default to app_name if not provided
-    if prefix is None:
-        prefix = app_name
-        log.info("using_default_prefix", prefix=prefix)
-
-    return AppInfo(
-        import_path=module_path,
-        name=app_name,
-        prefix=prefix,
-        routes=routes,
-    )
+        
+    log.info("apps_loaded", count=len(apps_info))
+    return apps_info
 
 
 def generate_typed_module(apps_info: list[AppInfo], output_path: Path) -> None:
@@ -162,8 +259,12 @@ def main(
         directory=str(directory),
     )
 
-    # Add directory to sys.path so we can import the app
-    sys.path.insert(0, str(directory.resolve()))
+    # Resolve output path relative to directory
+    # Note: If directory is provided, output path is likely meant to be relative to it, 
+    # OR it's an absolute path. 
+    # The original implementation did: output = directory / output
+    # We will preserve that behavior for consistency.
+    output = directory / output
 
     try:
         # Parse prefixes - if provided, must match number of apps
@@ -171,14 +272,10 @@ def main(
 
         if len(prefixes) != len(app_module):
             raise click.ClickException(
-                f"Number of prefixes ({len(prefixes)}) must match number of app modules ({len(app_module)})"
-            )
+                f"Number of prefixes ({len(prefixes)}) must match number of app modules ({len(app_module)})")
 
-        # Load all apps
-        apps_info = []
-        for app_mod, app_prefix in zip(app_module, prefixes):
-            app_info = load_app(app_mod, app_prefix)
-            apps_info.append(app_info)
+        # Load all apps and extract routes using subprocess
+        apps_info = get_apps_info(app_module, prefixes, directory)
 
         # Generate module
         generate_typed_module(apps_info, output)
@@ -200,4 +297,7 @@ def main(
 
     except Exception as e:
         log.error("generation_failed", error=str(e), exc_info=True)
+        # If it's already a ClickException, just raise it
+        if isinstance(e, click.ClickException):
+            raise
         raise click.ClickException(str(e))

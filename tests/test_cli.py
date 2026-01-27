@@ -10,13 +10,24 @@ sys.path.append(os.path.dirname(__file__))
 def test_generate_routes(tmp_path):
     runner = CliRunner()
     output_file = tmp_path / "routes.py"
+    tests_dir = os.path.dirname(__file__)
 
     # We use sample_app from the same directory
-    # 'sample_app:app' assumes sample_app.py is in the python path.
-
+    # We must pass the directory so the subprocess can find it via PYTHONPATH
     result = runner.invoke(
-        main, ["--app-module", "sample_app:app", "--output", str(output_file)]
+        main,
+        [
+            "--app-module",
+            "sample_app:app",
+            "--output",
+            str(output_file),
+            "--directory",
+            tests_dir,
+        ],
     )
+
+    if result.exit_code != 0:
+        print(result.output)
 
     assert result.exit_code == 0
     assert output_file.exists()
@@ -36,6 +47,7 @@ def test_generate_routes(tmp_path):
 def test_generate_routes_with_prefix(tmp_path):
     runner = CliRunner()
     output_file = tmp_path / "routes_custom.py"
+    tests_dir = os.path.dirname(__file__)
 
     result = runner.invoke(
         main,
@@ -46,8 +58,13 @@ def test_generate_routes_with_prefix(tmp_path):
             str(output_file),
             "--prefix",
             "my_api",
+            "--directory",
+            tests_dir,
         ],
     )
+
+    if result.exit_code != 0:
+        print(result.output)
 
     assert result.exit_code == 0
     content = output_file.read_text()
@@ -66,7 +83,8 @@ def test_generate_routes_custom_directory(tmp_path):
         "from fastapi import FastAPI\napp = FastAPI()\n@app.get('/test', name='test_route')\ndef test(): pass"
     )
 
-    output_file = tmp_path / "routes_subdir.py"
+    # Output path relative to app_dir
+    output_filename = "routes_subdir.py"
 
     result = runner.invoke(
         main,
@@ -74,14 +92,22 @@ def test_generate_routes_custom_directory(tmp_path):
             "--app-module",
             "my_app:app",
             "--output",
-            str(output_file),
+            output_filename,
             "--directory",
             str(app_dir),
         ],
     )
 
+    if result.exit_code != 0:
+        print(result.output)
+
     assert result.exit_code == 0
-    content = output_file.read_text()
+
+    # Check that file was created INSIDE app_dir
+    expected_output = app_dir / output_filename
+    assert expected_output.exists()
+
+    content = expected_output.read_text()
     assert (
         'def app_url_path_for(name: Literal["test_route"], **path_params) -> str: ...'
         in content
