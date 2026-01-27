@@ -6,7 +6,6 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Literal
 
 import click
 from jinja2 import Template
@@ -115,12 +114,10 @@ class AppInfo(BaseModel):
 
 
 def get_apps_info(
-    app_modules: tuple[str, ...],
-    prefixes: list[str | None],
-    directory: Path
+    app_modules: tuple[str, ...], prefixes: list[str | None], directory: Path
 ) -> list[AppInfo]:
     """Load FastAPI apps and extract information using a subprocess."""
-    
+
     # Prepare environment for subprocess
     env = os.environ.copy()
     # Add directory to PYTHONPATH so imports work
@@ -154,35 +151,37 @@ def get_apps_info(
     if result.returncode != 0:
         error_msg = result.stderr.strip()
         log.error("subprocess_failed", exit_code=result.returncode, stderr=error_msg)
-        
+
         msg = f"Failed to extract routes.\nError: {error_msg}"
         if "ModuleNotFoundError" in error_msg or "ImportError" in error_msg:
-             msg += "\n\nHint: It looks like the application module could not be found or imported."
-             msg += "\nIf you are running this tool via 'uvx' or 'pipx', the application dependencies might not be available."
-             msg += "\nTry running inside your project environment (e.g., 'uv run generate-fastapi-typed-routes ...')."
-        
+            msg += "\n\nHint: It looks like the application module could not be found or imported."
+            msg += "\nIf you are running this tool via 'uvx' or 'pipx', the application dependencies might not be available."
+            msg += "\nTry running inside your project environment (e.g., 'uv run generate-fastapi-typed-routes ...')."
+
         raise click.ClickException(msg)
 
     try:
         data = json.loads(result.stdout)
     except json.JSONDecodeError:
-         log.error("json_decode_failed", stdout=result.stdout)
-         raise click.ClickException(f"Failed to parse output from extractor: {result.stdout}")
+        log.error("json_decode_failed", stdout=result.stdout)
+        raise click.ClickException(
+            f"Failed to parse output from extractor: {result.stdout}"
+        )
 
     apps_info = []
     for i, app_data in enumerate(data):
         import_path = app_data["import_path"]
         name = app_data["name"]
         routes_data = app_data["routes"]
-        
+
         # Determine prefix
         prefix = prefixes[i]
         if prefix is None:
             prefix = name
             log.info("using_default_prefix", prefix=prefix)
-            
+
         routes = [RouteInfo(**r) for r in routes_data]
-        
+
         apps_info.append(
             AppInfo(
                 import_path=import_path,
@@ -191,7 +190,7 @@ def get_apps_info(
                 routes=routes,
             )
         )
-        
+
     log.info("apps_loaded", count=len(apps_info))
     return apps_info
 
@@ -260,19 +259,22 @@ def main(
     )
 
     # Resolve output path relative to directory
-    # Note: If directory is provided, output path is likely meant to be relative to it, 
-    # OR it's an absolute path. 
+    # Note: If directory is provided, output path is likely meant to be relative to it,
+    # OR it's an absolute path.
     # The original implementation did: output = directory / output
     # We will preserve that behavior for consistency.
     output = directory / output
 
     try:
         # Parse prefixes - if provided, must match number of apps
-        prefixes = list(prefix) if prefix else [None] * len(app_module)
+        prefixes: list[str | None] = (
+            list(prefix) if prefix else [None] * len(app_module)
+        )
 
         if len(prefixes) != len(app_module):
             raise click.ClickException(
-                f"Number of prefixes ({len(prefixes)}) must match number of app modules ({len(app_module)})")
+                f"Number of prefixes ({len(prefixes)}) must match number of app modules ({len(app_module)})"
+            )
 
         # Load all apps and extract routes using subprocess
         apps_info = get_apps_info(app_module, prefixes, directory)
