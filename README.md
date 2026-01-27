@@ -30,6 +30,7 @@ url = app_url_path_for("get_user_profile", user_id=123)
 *   `--app-module`: The import path to your FastAPI app instance (e.g., `src.main:app`). You can pass this multiple times to generate helpers for multiple apps in one file.
 *   `--output`: The file path where the generated Python code will be saved.
 *   `--prefix`: (Optional) Custom prefix for the generated function. Defaults to the app variable name (e.g., `app` becomes `app_url_path_for`). Use this if you have multiple apps to keep things distinct.
+*   `--directory` / `-d`: (Optional) The directory containing the application module (default: current directory). Use this if your app is not in the current working directory.
 
 ## Features
 

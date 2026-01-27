@@ -55,3 +55,34 @@ def test_generate_routes_with_prefix(tmp_path):
         'def my_api_url_path_for(name: Literal["create_user"], **path_params) -> str: ...'
         in content
     )
+
+
+def test_generate_routes_custom_directory(tmp_path):
+    runner = CliRunner()
+    app_dir = tmp_path / "subdir"
+    app_dir.mkdir()
+    (app_dir / "__init__.py").touch()
+    (app_dir / "my_app.py").write_text(
+        "from fastapi import FastAPI\napp = FastAPI()\n@app.get('/test', name='test_route')\ndef test(): pass"
+    )
+
+    output_file = tmp_path / "routes_subdir.py"
+
+    result = runner.invoke(
+        main,
+        [
+            "--app-module",
+            "my_app:app",
+            "--output",
+            str(output_file),
+            "--directory",
+            str(app_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+    content = output_file.read_text()
+    assert (
+        'def app_url_path_for(name: Literal["test_route"], **path_params) -> str: ...'
+        in content
+    )

@@ -2,6 +2,7 @@ from pathlib import Path
 from types import ModuleType
 import shutil
 import subprocess
+import sys
 
 import click
 from fastapi import FastAPI
@@ -139,12 +140,30 @@ def generate_typed_module(apps_info: list[AppInfo], output_path: Path) -> None:
     default=None,
     help="Prefix for the generated function (default: uses app variable name). Should match order of --app-module.",
 )
+@click.option(
+    "--directory",
+    "-d",
+    type=click.Path(path_type=Path, exists=True, file_okay=False),
+    default=".",
+    help="Directory containing the application module (default: current directory).",
+)
 def main(
-    app_module: tuple[str, ...], output: Path, prefix: tuple[str, ...] | None
+    app_module: tuple[str, ...],
+    output: Path,
+    prefix: tuple[str, ...] | None,
+    directory: Path,
 ) -> None:
     """Generate typed url_path_for functions for FastAPI applications."""
 
-    log.info("starting_generation", app_modules=app_module, output=str(output))
+    log.info(
+        "starting_generation",
+        app_modules=app_module,
+        output=str(output),
+        directory=str(directory),
+    )
+
+    # Add directory to sys.path so we can import the app
+    sys.path.insert(0, str(directory.resolve()))
 
     try:
         # Parse prefixes - if provided, must match number of apps
