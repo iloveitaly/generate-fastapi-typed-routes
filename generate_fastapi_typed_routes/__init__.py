@@ -168,8 +168,14 @@ def main(
         ruff_path = shutil.which("ruff")
         if ruff_path:
             click.secho(f"Reformatting {output} with Ruff...", fg="green")
-            subprocess.run([ruff_path, "format", str(output)], check=False, capture_output=True)
-            subprocess.run([ruff_path, "check", "--fix", str(output)], check=False, capture_output=True)
+            subprocess.run(
+                [ruff_path, "format", str(output)], check=False, capture_output=True
+            )
+            subprocess.run(
+                [ruff_path, "check", "--fix", str(output)],
+                check=False,
+                capture_output=True,
+            )
 
         click.secho(f"Successfully generated typed routes at: {output}", fg="green")
 
