@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.2.0...v0.3.0) (2026-01-27)
+
+
+### Features
+
+* **cli:** add --directory/-d for custom app module path ([37737db](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/37737db196afa6ced994a0d3e367ed76393e5d78))
+
 ## [0.2.0](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.1.1...v0.2.0) (2026-01-27)
 
 
