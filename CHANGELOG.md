@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.1.0...v0.1.1) (2026-01-27)
+
+
+### Documentation
+
+* add MIT license to project ([fcef728](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/fcef7286205cff92d8362a48290d5ebcd9bca176))
+* clarify usage and features in README, simplify example ([51f6fdb](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/51f6fdbf8363c72d287eeaa379f7ed40e33d67c6))
+
 ## 0.1.0 (2026-01-27)
 
 
