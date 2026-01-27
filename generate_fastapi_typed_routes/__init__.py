@@ -1,5 +1,7 @@
 from pathlib import Path
 from types import ModuleType
+import shutil
+import subprocess
 
 import click
 from fastapi import FastAPI
@@ -161,6 +163,15 @@ def main(
 
         # Generate module
         generate_typed_module(apps_info, output)
+
+        # Post-generation formatting with Ruff
+        ruff_path = shutil.which("ruff")
+        if ruff_path:
+            click.secho(f"Reformatting {output} with Ruff...", fg="green")
+            subprocess.run([ruff_path, "format", str(output)], check=False, capture_output=True)
+            subprocess.run([ruff_path, "check", "--fix", str(output)], check=False, capture_output=True)
+
+        click.secho(f"Successfully generated typed routes at: {output}", fg="green")
 
     except Exception as e:
         log.error("generation_failed", error=str(e), exc_info=True)
