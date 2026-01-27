@@ -1,76 +1,41 @@
-# generate-fastapi-typed-routes
+# Type-Safe Route URL Generator for FastAPI
 
-Auto-generated typed `url_path_for` functions for FastAPI apps.
-
-This tool generates a Python module containing a type-safe wrapper around `FastAPI.url_path_for`, providing autocompletion and type checking for your route names.
+Stop guessing route names. This tool analyzes your FastAPI application and generates a typed wrapper for `url_path_for`, giving you instant autocompletion and catching typos before they hit production.
 
 ## Installation
 
 ```bash
-uv tool install generate-fastapi-typed-routes
+uvx generate-fastapi-typed-routes@latest
 ```
 
 ## Usage
 
-```bash
-generate-fastapi-typed-routes --app-module myapp.main:app --output myapp/routes.py
-```
-
-### Arguments
-
-*   `--app-module`: Python module path to your FastAPI app (e.g., `myapp.main:app`). Can be specified multiple times to include routes from multiple apps.
-*   `--output`: Output path for the generated module.
-*   `--prefix`: (Optional) Prefix for the generated function names. Defaults to the app variable name (e.g., `app_url_path_for`).
-
-### Example
-
-Given a FastAPI app:
-
-```python
-# myapp/main.py
-from fastapi import FastAPI
-
-app = FastAPI()
-
-@app.get("/items/{item_id}", name="get_item")
-def read_item(item_id: int):
-    ...
-```
-
-Run the generator:
+Point the tool at your FastAPI app and tell it where to save the generated code:
 
 ```bash
-generate-fastapi-typed-routes --app-module myapp.main:app --output myapp/routes.py
+uvx generate-fastapi-typed-routes@latest --app-module myapp.main:app --output myapp/routes.py
 ```
 
-The generated `myapp/routes.py` will contain:
-
-```python
-from typing import overload, Literal
-from myapp.main import app
-
-@overload
-def app_url_path_for(name: Literal["get_item"], **path_params) -> str: ...
-
-def app_url_path_for(name: str, **path_params) -> str:
-    """Type-safe wrapper around app.url_path_for() with overloads for all routes."""
-    return app.url_path_for(name, **path_params)
-```
-
-Now you can use it in your code with type safety:
+Now, instead of using the raw `app.url_path_for`, import your generated function:
 
 ```python
 from myapp.routes import app_url_path_for
 
-url = app_url_path_for("get_item", item_id=42)
+# Complete with IDE autocompletion and type checking!
+url = app_url_path_for("get_user_profile", user_id=123)
 ```
 
-## Development
+### CLI Arguments
 
-This project uses `uv` for dependency management and `just` for command running.
+*   `--app-module`: The import path to your FastAPI app instance (e.g., `src.main:app`). You can pass this multiple times to generate helpers for multiple apps in one file.
+*   `--output`: The file path where the generated Python code will be saved.
+*   `--prefix`: (Optional) Custom prefix for the generated function. Defaults to the app variable name (e.g., `app` becomes `app_url_path_for`). Use this if you have multiple apps to keep things distinct.
 
-```bash
-just setup
-just test
-just lint
-```
+## Features
+
+*   **Zero Runtime Overhead:** The generated code is just type hints and a simple wrapper.
+*   **IDE Autocompletion:** Never type a route name manually again. Your editor will list every available route name defined in your app.
+*   **Refactoring Safe:** Change a route name in your app, and your type checker (mypy, pyright) will flag every place usage that needs updating.
+*   **Multi-App Support:** Easily manage routes for projects with multiple FastAPI instances.
+
+# [MIT License](LICENSE.md)
