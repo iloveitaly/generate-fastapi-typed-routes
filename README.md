@@ -5,6 +5,7 @@ Stop guessing route names. This tool analyzes your FastAPI application and gener
 ## Installation
 
 ```bash
+uv add generate-fastapi-typed-routes --dev
 uvx generate-fastapi-typed-routes@latest
 ```
 
