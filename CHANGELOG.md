@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.3.0...v0.3.1) (2026-01-27)
+
+
+### Bug Fixes
+
+* Add installation command for generate-fastapi-typed-routes ([ab7bb48](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/ab7bb48ec65e9482bd1864fc0392b17fe222d666))
+
 ## [0.3.0](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.2.0...v0.3.0) (2026-01-27)
 
 
