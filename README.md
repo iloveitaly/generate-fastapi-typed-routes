@@ -6,7 +6,6 @@ Stop guessing route names. This tool analyzes your FastAPI application and gener
 
 ```bash
 uv add generate-fastapi-typed-routes --dev
-uvx generate-fastapi-typed-routes@latest
 ```
 
 ## Usage
@@ -14,8 +13,10 @@ uvx generate-fastapi-typed-routes@latest
 Point the tool at your FastAPI app and tell it where to save the generated code:
 
 ```bash
-uvx generate-fastapi-typed-routes@latest --app-module myapp.main:app --output myapp/routes.py
+generate-fastapi-typed-routes --app-module myapp.main:app --output myapp/routes.py
 ```
+
+Note that since this tool needs to import an app modules you cannot run it via uvx, which runs outside of your venv.
 
 Now, instead of using the raw `app.url_path_for`, import your generated function:
 
