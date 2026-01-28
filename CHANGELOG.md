@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.3.2...v0.3.3) (2026-01-28)
+
+
+### Documentation
+
+* Fix command usage in README for FastAPI tool ([56061b4](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/56061b4164d0f0cdc066f8288d4a9d089d0496f2))
+* Update README with example project and installation ([752f28b](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/752f28bcc4facbdc57564969e4b5716519b25778))
+
 ## [0.3.2](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.3.1...v0.3.2) (2026-01-28)
 
 
