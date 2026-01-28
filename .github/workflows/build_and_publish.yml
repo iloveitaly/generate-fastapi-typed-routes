@@ -52,9 +52,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
       # NOTE this permission requires configuration to be set on the repo, check `just github_repo_permissions_create`
       pull-requests: write
-      issues: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
     steps:
