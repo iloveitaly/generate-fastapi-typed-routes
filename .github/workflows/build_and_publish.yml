@@ -48,6 +48,7 @@ jobs:
       - run: uv run pytest
 
   release-please:
+    if: github.event.repository.fork == false
     # allow release-please open PRs, update changelog, etc
     permissions:
       contents: write
