@@ -7,12 +7,10 @@ on:
 jobs:
   repo_sync:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Fetching Local Repository
         uses: actions/checkout@v6
       - name: Repository Metadata Sync
         uses: iloveitaly/github-actions-metadata-sync@main
         with:
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOKEN: ${{ secrets.GH_PERSONAL_TOKEN }}
