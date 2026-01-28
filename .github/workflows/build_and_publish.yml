@@ -47,6 +47,11 @@ jobs:
       - run: uv run pytest
 
   release-please:
+    # allow release-please open PRs, update changelog, etc
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
     needs: matrix-test
     runs-on: ubuntu-latest
     outputs:
@@ -57,7 +62,10 @@ jobs:
         id: release
         with:
           release-type: python
-          token: ${{ secrets.GH_PERSONAL_TOKEN }}
+          # Uses the default GITHUB_TOKEN (built-in secret), and expects Read/Write Workflow permissions
+          # Repo Settings > Actions > General > Workflow Permissions > select "Read and write permissions"
+          # https://docs.github.com/en/actions/tutorials/authenticate-with-github_token
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   build-and-publish:
     needs: release-please
