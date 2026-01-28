@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.2](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.3.1...v0.3.2) (2026-01-28)
+
+
+### Bug Fixes
+
+* don't use subprocess approach, assume this is run in the environment ([c01ec02](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/c01ec0294db5078150e229faaaf67aa84c7f03ce))
+* pass github token to release-please step ([2336077](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/233607732276dc4fe43da72682b93d5249cdffe5))
+
 ## [0.3.1](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.3.0...v0.3.1) (2026-01-27)
 
 
