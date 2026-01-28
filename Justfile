@@ -97,7 +97,7 @@ github_ruleset_protect_master_create: github_ruleset_protect_master_delete
 [script]
 github_last_build_failure:
     BRANCH=$(git branch --show-current)
-    
+
     # 1. Fetch last 20 runs (to skip over 'Metadata Sync', 'Dependabot', etc.)
     JSON=$(gh run list -b "$BRANCH" -L 20 --json databaseId,conclusion,workflowName)
 
@@ -121,3 +121,12 @@ github_last_build_failure:
         # Force cat pager to output logs directly to terminal
         GH_PAGER=cat gh run view "$ID" --log-failed
     fi
+
+# Set GitHub Actions permissions for the repository to allow workflows to write and approve PR reviews
+# This enables release-please to run without a personal access token
+github_repo_permissions_create:
+  repo_path=$(gh repo view --json nameWithOwner --jq '.nameWithOwner') && \
+    gh api --method PUT "/repos/${repo_path}/actions/permissions/workflow" \
+      -f default_workflow_permissions=write \
+      -F can_approve_pull_request_reviews=true && \
+    gh api "/repos/${repo_path}/actions/permissions/workflow"
