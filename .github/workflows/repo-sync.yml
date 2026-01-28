@@ -13,4 +13,4 @@ jobs:
       - name: Repository Metadata Sync
         uses: iloveitaly/github-actions-metadata-sync@main
         with:
-          TOKEN: ${{ secrets.GH_PERSONAL_TOKEN }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
