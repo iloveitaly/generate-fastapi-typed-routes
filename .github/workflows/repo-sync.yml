@@ -7,6 +7,8 @@ on:
 jobs:
   repo_sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Fetching Local Repository
         uses: actions/checkout@v6
