@@ -2,6 +2,9 @@
 
 Stop guessing route names. This tool analyzes your FastAPI application and generates a typed wrapper for `url_path_for`, giving you instant autocompletion and catching typos before they hit production.
 
+[Here's an example project](https://github.com/iloveitaly/python-starter-template
+) which uses it (checkout `just py_generate`)
+
 ## Installation
 
 ```bash
