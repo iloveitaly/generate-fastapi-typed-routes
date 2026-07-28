@@ -3,12 +3,9 @@
 import os
 import sys
 
-import fastapi
-import pytest
 from click.testing import CliRunner
 from fastapi import APIRouter, FastAPI
 from fastapi.routing import APIRoute
-from packaging.version import Version
 
 from generate_fastapi_typed_routes import extract_routes, main
 
@@ -19,9 +16,9 @@ sys.path.append(os.path.dirname(__file__))
 def test_extract_routes_includes_nested_include_router():
     """Routes registered via include_router must be extracted.
 
-    On FastAPI >= 0.137.0, app.routes is a tree of _IncludedRouter nodes
-    rather than a flat list of APIRoute. extract_routes must still find
-    nested route names via iter_route_contexts.
+    FastAPI >= 0.137.0 keeps include_router mounts as a tree of
+    _IncludedRouter nodes; extract_routes must walk them via
+    iter_route_contexts (required by fastapi>=0.137.0).
     """
     app = FastAPI()
     router = APIRouter(prefix="/v1")
@@ -36,12 +33,8 @@ def test_extract_routes_includes_nested_include_router():
     assert "list_items" in names
 
 
-@pytest.mark.skipif(
-    Version(fastapi.__version__) < Version("0.137.0"),
-    reason="nested include_router structure starts at 0.137.0",
-)
 def test_app_routes_contain_included_router_not_flat_apiroute():
-    """Document the FastAPI >= 0.137 structural trigger for the bug."""
+    """Nested routes are not top-level APIRoute under fastapi>=0.137.0."""
     app = FastAPI()
     router = APIRouter()
 
