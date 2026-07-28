@@ -1,6 +1,8 @@
-import sys
 import os
+import sys
+
 from click.testing import CliRunner
+
 from generate_fastapi_typed_routes import main
 
 # Ensure tests directory is in path so we can import sample_app

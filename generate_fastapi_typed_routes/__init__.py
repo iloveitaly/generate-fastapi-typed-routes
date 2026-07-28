@@ -112,7 +112,9 @@ def load_app(app_module: str, prefix: str | None) -> AppInfo:
             routes=routes,
         )
     except (ImportError, AttributeError, ValueError, TypeError) as e:
-        raise click.ClickException(f"Error loading application '{app_module}': {e}")
+        raise click.ClickException(
+            f"Error loading application '{app_module}': {e}"
+        ) from e
 
 
 def generate_typed_module(apps_info: list[AppInfo], output_path: Path) -> None:
@@ -202,7 +204,7 @@ def main(
 
         # Load all apps
         apps_info = []
-        for app_mod, app_prefix in zip(app_module, prefixes):
+        for app_mod, app_prefix in zip(app_module, prefixes, strict=True):
             app_info = load_app(app_mod, app_prefix)
             apps_info.append(app_info)
 
@@ -225,8 +227,8 @@ def main(
         click.secho(f"Successfully generated typed routes at: {output}", fg="green")
 
     except Exception as e:
-        log.error("generation_failed", error=str(e), exc_info=True)
+        log.exception("generation_failed", error=str(e))
         # If it's already a ClickException, just raise it
         if isinstance(e, click.ClickException):
             raise
-        raise click.ClickException(str(e))
+        raise click.ClickException(str(e)) from e
