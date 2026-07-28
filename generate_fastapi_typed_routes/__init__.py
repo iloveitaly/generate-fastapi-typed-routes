@@ -13,6 +13,8 @@ from jinja2 import Template
 from pydantic import BaseModel
 from structlog_config import configure_logger
 
+from .version import __version__
+
 log = configure_logger()
 
 MODULE_TEMPLATE = '''\
@@ -136,6 +138,7 @@ def generate_typed_module(apps_info: list[AppInfo], output_path: Path) -> None:
 
 
 @click.command()
+@click.version_option(version=__version__, prog_name="generate-fastapi-typed-routes")
 @click.option(
     "--app-module",
     multiple=True,

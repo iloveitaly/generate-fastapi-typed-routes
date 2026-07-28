@@ -1,3 +1,8 @@
+[![Release Notes](https://img.shields.io/github/release/iloveitaly/generate-fastapi-typed-routes)](https://github.com/iloveitaly/generate-fastapi-typed-routes/releases)
+[![Downloads](https://static.pepy.tech/badge/generate-fastapi-typed-routes/month)](https://pepy.tech/project/generate-fastapi-typed-routes)
+![GitHub CI Status](https://github.com/iloveitaly/generate-fastapi-typed-routes/actions/workflows/build_and_publish.yml/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # Type-Safe Route URL Generator for FastAPI
 
 Stop guessing route names. This tool analyzes your FastAPI application and generates a typed wrapper for `url_path_for`, giving you instant autocompletion and catching typos before they hit production.
@@ -45,3 +50,7 @@ url = app_url_path_for("get_user_profile", user_id=123)
 *   **Multi-App Support:** Easily manage routes for projects with multiple FastAPI instances.
 
 # [MIT License](LICENSE.md)
+
+---
+
+*This project was created from [iloveitaly/python-package-template](https://github.com/iloveitaly/python-package-template)*
