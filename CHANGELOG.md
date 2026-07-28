@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.3.3...v0.3.4) (2026-07-28)
+
+
+### Bug Fixes
+
+* extract nested include_router routes on FastAPI ≥0.137 ([#10](https://github.com/iloveitaly/generate-fastapi-typed-routes/issues/10)) ([755a1f3](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/755a1f3eb7605034f4112e37e7db20f067a3c3ec))
+
 ## [0.3.3](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.3.2...v0.3.3) (2026-07-28)
 
 
