@@ -8,7 +8,7 @@ from types import ModuleType
 
 import click
 from fastapi import FastAPI
-from fastapi.routing import APIRoute
+from fastapi.routing import APIRoute, iter_route_contexts
 from jinja2 import Template
 from pydantic import BaseModel
 from structlog_config import configure_logger
@@ -53,10 +53,16 @@ class AppInfo(BaseModel):
 
 
 def extract_routes(app: FastAPI) -> list[RouteInfo]:
-    """Extract route information from a FastAPI app."""
+    """Extract route information from a FastAPI app.
+
+    Walks nested include_router trees via FastAPI's public iter_route_contexts
+    (required since FastAPI 0.137.0, where app.routes is no longer a flat list
+    of APIRoute objects).
+    """
     routes: list[RouteInfo] = []
 
-    for route in app.routes:
+    for route_context in iter_route_contexts(app.routes):
+        route = route_context.original_route
         if not isinstance(route, APIRoute):
             continue
 
@@ -66,7 +72,8 @@ def extract_routes(app: FastAPI) -> list[RouteInfo]:
         routes.append(
             RouteInfo(
                 name=route.name,
-                path=route.path,
+                # Prefer effective path (includes prefixes from include_router)
+                path=route_context.path or route.path,
             )
         )
 

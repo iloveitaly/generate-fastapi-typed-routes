@@ -1,8 +1,19 @@
 """Tests for extract_routes, including include_router nesting."""
 
-from fastapi import APIRouter, FastAPI
+import os
+import sys
 
-from generate_fastapi_typed_routes import extract_routes
+import fastapi
+import pytest
+from click.testing import CliRunner
+from fastapi import APIRouter, FastAPI
+from fastapi.routing import APIRoute
+from packaging.version import Version
+
+from generate_fastapi_typed_routes import extract_routes, main
+
+# Ensure tests directory is in path so we can import sample modules
+sys.path.append(os.path.dirname(__file__))
 
 
 def test_extract_routes_includes_nested_include_router():
@@ -10,7 +21,7 @@ def test_extract_routes_includes_nested_include_router():
 
     On FastAPI >= 0.137.0, app.routes is a tree of _IncludedRouter nodes
     rather than a flat list of APIRoute. extract_routes must still find
-    nested route names (pin fastapi<0.137.0 until that walk is fixed).
+    nested route names via iter_route_contexts.
     """
     app = FastAPI()
     router = APIRouter(prefix="/v1")
@@ -23,6 +34,28 @@ def test_extract_routes_includes_nested_include_router():
 
     names = {r.name for r in extract_routes(app)}
     assert "list_items" in names
+
+
+@pytest.mark.skipif(
+    Version(fastapi.__version__) < Version("0.137.0"),
+    reason="nested include_router structure starts at 0.137.0",
+)
+def test_app_routes_contain_included_router_not_flat_apiroute():
+    """Document the FastAPI >= 0.137 structural trigger for the bug."""
+    app = FastAPI()
+    router = APIRouter()
+
+    @router.get("/x", name="nested_x")
+    def nested_x():
+        return {}
+
+    app.include_router(router)
+
+    top_level_api_routes = [r for r in app.routes if isinstance(r, APIRoute)]
+    assert all(getattr(r, "name", None) != "nested_x" for r in top_level_api_routes)
+
+    included = [r for r in app.routes if type(r).__name__ == "_IncludedRouter"]
+    assert len(included) >= 1
 
 
 def test_extract_routes_direct_and_included():
@@ -76,3 +109,69 @@ def test_extract_routes_multi_level_include():
 
     routes = {r.name: r.path for r in extract_routes(app)}
     assert routes["deep"] == "/outer/mid/deep"
+
+
+def test_extract_routes_after_include_still_visible():
+    """Routes added to a router after include_router must still be found."""
+    app = FastAPI()
+    router = APIRouter()
+    app.include_router(router)
+
+    @router.get("/late", name="late_route")
+    def late():
+        return {}
+
+    names = {r.name for r in extract_routes(app)}
+    assert "late_route" in names
+
+
+def test_generate_typed_module_includes_nested_route_names(tmp_path):
+    """End-to-end: generated overloads include include_router route names."""
+    app_dir = tmp_path / "nested_app"
+    app_dir.mkdir()
+    (app_dir / "__init__.py").touch()
+    (app_dir / "main.py").write_text(
+        """\
+from fastapi import APIRouter, FastAPI
+
+app = FastAPI()
+api = APIRouter(prefix="/internal/v1")
+
+@api.get("/users", name="user_list")
+def user_list():
+    return []
+
+@api.get("/health", name="healthcheck")
+def healthcheck():
+    return {"ok": True}
+
+app.include_router(api)
+
+@app.get("/top", name="top_level")
+def top_level():
+    return {"top": True}
+"""
+    )
+
+    runner = CliRunner()
+    output_file = "routes.py"
+    result = runner.invoke(
+        main,
+        [
+            "--app-module",
+            "main:app",
+            "--output",
+            output_file,
+            "--directory",
+            str(app_dir),
+        ],
+    )
+
+    if result.exit_code != 0:
+        print(result.output)
+
+    assert result.exit_code == 0
+    content = (app_dir / output_file).read_text()
+    assert 'Literal["user_list"]' in content
+    assert 'Literal["healthcheck"]' in content
+    assert 'Literal["top_level"]' in content
