@@ -1,6 +1,6 @@
 [project]
 name = "generate-fastapi-typed-routes"
-version = "0.3.2"
+version = "0.3.3"
 description = "Generate typed url_path_for functions for FastAPI applications."
 keywords = ["fastapi", "typing", "routes", "codegen"]
 readme = "README.md"
