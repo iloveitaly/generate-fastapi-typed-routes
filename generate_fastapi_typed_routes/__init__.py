@@ -35,21 +35,20 @@ from {{ app_info.import_path }} import {{ app_info.name }}
 def {{ app_info.prefix }}_url_path_for(name: Literal["{{ route.generated_name }}"], **path_params) -> str: ...
 {% endfor %}
 
-_{{ app_info.prefix }}_route_aliases = {
+_{{ app_info.prefix }}_qualified_route_ids = frozenset((
 {% for route in app_info.routes if route.uses_unique_id %}
-    "{{ route.generated_name }}": "{{ route.unique_id }}",
+    "{{ route.generated_name }}",
 {% endfor %}
-}
+))
 
 def {{ app_info.prefix }}_url_path_for(name: str, **path_params) -> str:
     """Type-safe wrapper around {{ app_info.name }}.url_path_for() with overloads for all routes."""
-    route_unique_id = _{{ app_info.prefix }}_route_aliases.get(name)
-    if route_unique_id is not None:
+    if name in _{{ app_info.prefix }}_qualified_route_ids:
         for route_context in iter_route_contexts({{ app_info.name }}.routes):
             route = route_context.original_route
             if (
                 isinstance(route, APIRoute)
-                and route_context.unique_id == route_unique_id
+                and route_context.unique_id == name
             ):
                 return route_context.url_path_for(route.name, **path_params)
         raise NoMatchFound(name, path_params)
