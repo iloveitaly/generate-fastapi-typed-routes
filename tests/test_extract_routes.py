@@ -7,7 +7,12 @@ from click.testing import CliRunner
 from fastapi import APIRouter, FastAPI
 from fastapi.routing import APIRoute
 
-from generate_fastapi_typed_routes import extract_routes, main
+from generate_fastapi_typed_routes import (
+    AppInfo,
+    extract_routes,
+    generate_typed_module,
+    main,
+)
 
 # Ensure tests directory is in path so we can import sample modules
 sys.path.append(os.path.dirname(__file__))
@@ -102,6 +107,42 @@ def test_extract_routes_multi_level_include():
 
     routes = {r.name: r.path for r in extract_routes(app)}
     assert routes["deep"] == "/outer/mid/deep"
+
+
+def test_generate_typed_module_deduplicates_names_across_routers(tmp_path):
+    def create_router(prefix):
+        router = APIRouter(prefix=prefix)
+
+        @router.get("/items")
+        def list_items():
+            return []
+
+        return router
+
+    app = FastAPI()
+    app.include_router(create_router("/first"))
+    app.include_router(create_router("/second"))
+
+    routes = extract_routes(app)
+    assert {(route.name, route.path) for route in routes} == {
+        ("list_items", "/first/items"),
+        ("list_items", "/second/items"),
+    }
+
+    output_file = tmp_path / "routes.py"
+    generate_typed_module(
+        [
+            AppInfo(
+                import_path="example",
+                name="app",
+                prefix="app",
+                routes=routes,
+            )
+        ],
+        output_file,
+    )
+
+    assert output_file.read_text().count('Literal["list_items"]') == 1
 
 
 def test_extract_routes_after_include_still_visible():
