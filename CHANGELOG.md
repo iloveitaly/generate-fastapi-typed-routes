@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.3.4...v0.4.0) (2026-07-29)
+
+
+### Features
+
+* emit warnings when duplicate route names require unique IDs ([753bd4a](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/753bd4a11ee2e553cb2bb94b1ec648b8d483556c))
+* **routes:** handle duplicate route names using FastAPI unique IDs ([22c61cc](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/22c61ccfaf0b102f494dd458633a80d7f6708266))
+
 ## [0.3.4](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.3.3...v0.3.4) (2026-07-28)
 
 
