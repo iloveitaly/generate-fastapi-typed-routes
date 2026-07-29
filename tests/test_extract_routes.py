@@ -141,6 +141,9 @@ app.include_router(create_router("/second"))
     )
 
     assert result.exit_code == 0
+    assert result.output.count("duplicate_route_name_using_unique_id") == 2
+    assert "list_items_first_items_get" in result.output
+    assert "list_items_second_items_get" in result.output
     content = output_file.read_text()
     assert 'Literal["list_items_first_items_get"]' in content
     assert 'Literal["list_items_second_items_get"]' in content

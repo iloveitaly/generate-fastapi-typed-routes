@@ -82,17 +82,25 @@ class DuplicateGeneratedRouteNameError(ValueError):
 def _assign_generated_route_names(routes: list[RouteInfo]) -> list[RouteInfo]:
     """Use FastAPI unique IDs only when route names are ambiguous."""
     name_counts = Counter(route.name for route in routes)
-    resolved_routes = [
-        route.model_copy(
-            update={
-                "generated_name": (
-                    route.unique_id if name_counts[route.name] > 1 else route.name
-                ),
-                "uses_unique_id": name_counts[route.name] > 1,
-            }
+    resolved_routes = []
+    for route in routes:
+        uses_unique_id = name_counts[route.name] > 1
+        generated_name = route.unique_id if uses_unique_id else route.name
+        if uses_unique_id:
+            log.warning(
+                "duplicate_route_name_using_unique_id",
+                route_name=route.name,
+                path=route.path,
+                generated_name=generated_name,
+            )
+        resolved_routes.append(
+            route.model_copy(
+                update={
+                    "generated_name": generated_name,
+                    "uses_unique_id": uses_unique_id,
+                }
+            )
         )
-        for route in routes
-    ]
 
     routes_by_generated_name: dict[str, list[RouteInfo]] = defaultdict(list)
     for route in resolved_routes:

@@ -55,6 +55,8 @@ app_url_path_for("list_items_second_items_get")
 Routes whose names are already unique keep their shorter names. If FastAPI's
 unique IDs still cannot distinguish the conflicting routes, generation fails
 with an error listing the colliding routes and does not write the output file.
+Automatic qualification emits a warning for each affected route with its path
+and the unique ID used in the generated helper.
 
 ## Features
 
