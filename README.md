@@ -42,9 +42,23 @@ url = app_url_path_for("get_user_profile", user_id=123)
 *   `--prefix`: (Optional) Custom prefix for the generated function. Defaults to the app variable name (e.g., `app` becomes `app_url_path_for`). Use this if you have multiple apps to keep things distinct.
 *   `--directory` / `-d`: (Optional) The directory containing the application module (default: current directory). Use this if your app is not in the current working directory.
 
+### Duplicate Route Names
+
+When multiple routes in the same FastAPI app share a route name, the generated
+helper uses their FastAPI unique IDs instead:
+
+```python
+app_url_path_for("list_items_first_items_get")
+app_url_path_for("list_items_second_items_get")
+```
+
+Routes whose names are already unique keep their shorter names. If FastAPI's
+unique IDs still cannot distinguish the conflicting routes, generation fails
+with an error listing the colliding routes and does not write the output file.
+
 ## Features
 
-*   **Zero Runtime Overhead:** The generated code is just type hints and a simple wrapper.
+*   **Minimal Runtime Overhead:** Unique route names delegate directly to FastAPI; only automatically qualified duplicate names require route lookup.
 *   **IDE Autocompletion:** Never type a route name manually again. Your editor will list every available route name defined in your app.
 *   **Refactoring Safe:** Change a route name in your app, and your type checker (mypy, pyright) will flag every place usage that needs updating.
 *   **Multi-App Support:** Easily manage routes for projects with multiple FastAPI instances.

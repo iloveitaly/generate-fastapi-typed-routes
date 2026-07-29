@@ -1,18 +1,14 @@
 """Tests for extract_routes, including include_router nesting."""
 
 import os
+import runpy
 import sys
 
 from click.testing import CliRunner
 from fastapi import APIRouter, FastAPI
 from fastapi.routing import APIRoute
 
-from generate_fastapi_typed_routes import (
-    AppInfo,
-    extract_routes,
-    generate_typed_module,
-    main,
-)
+from generate_fastapi_typed_routes import extract_routes, main
 
 # Ensure tests directory is in path so we can import sample modules
 sys.path.append(os.path.dirname(__file__))
@@ -109,40 +105,93 @@ def test_extract_routes_multi_level_include():
     assert routes["deep"] == "/outer/mid/deep"
 
 
-def test_generate_typed_module_deduplicates_names_across_routers(tmp_path):
-    def create_router(prefix):
-        router = APIRouter(prefix=prefix)
+def test_cli_uses_unique_ids_for_duplicate_route_names(tmp_path):
+    app_dir = tmp_path / "duplicate_routes_app"
+    app_dir.mkdir()
+    (app_dir / "duplicate_routes_app.py").write_text(
+        """\
+from fastapi import APIRouter, FastAPI
 
-        @router.get("/items")
-        def list_items():
-            return []
+def create_router(prefix):
+    router = APIRouter(prefix=prefix)
 
-        return router
+    @router.get("/items")
+    def list_items():
+        return []
 
-    app = FastAPI()
-    app.include_router(create_router("/first"))
-    app.include_router(create_router("/second"))
+    return router
 
-    routes = extract_routes(app)
-    assert {(route.name, route.path) for route in routes} == {
-        ("list_items", "/first/items"),
-        ("list_items", "/second/items"),
-    }
-
-    output_file = tmp_path / "routes.py"
-    generate_typed_module(
-        [
-            AppInfo(
-                import_path="example",
-                name="app",
-                prefix="app",
-                routes=routes,
-            )
-        ],
-        output_file,
+app = FastAPI()
+app.include_router(create_router("/first"))
+app.include_router(create_router("/second"))
+"""
     )
 
-    assert output_file.read_text().count('Literal["list_items"]') == 1
+    output_file = app_dir / "routes.py"
+    result = CliRunner().invoke(
+        main,
+        [
+            "--app-module",
+            "duplicate_routes_app:app",
+            "--output",
+            output_file.name,
+            "--directory",
+            str(app_dir),
+        ],
+    )
+
+    assert result.exit_code == 0
+    content = output_file.read_text()
+    assert 'Literal["list_items_first_items_get"]' in content
+    assert 'Literal["list_items_second_items_get"]' in content
+    assert 'Literal["list_items"]' not in content
+
+    generated_module = runpy.run_path(output_file)
+    url_path_for = generated_module["app_url_path_for"]
+    assert url_path_for("list_items_first_items_get") == "/first/items"
+    assert url_path_for("list_items_second_items_get") == "/second/items"
+
+
+def test_cli_rejects_duplicate_unique_ids(tmp_path):
+    app_dir = tmp_path / "duplicate_unique_ids_app"
+    app_dir.mkdir()
+    (app_dir / "duplicate_unique_ids_app.py").write_text(
+        """\
+from fastapi import APIRouter, FastAPI
+
+def create_router(prefix):
+    router = APIRouter(prefix=prefix)
+
+    @router.get("/items", operation_id="duplicate_operation")
+    def list_items():
+        return []
+
+    return router
+
+app = FastAPI()
+app.include_router(create_router("/first"))
+app.include_router(create_router("/second"))
+"""
+    )
+
+    output_file = app_dir / "routes.py"
+    result = CliRunner().invoke(
+        main,
+        [
+            "--app-module",
+            "duplicate_unique_ids_app:app",
+            "--output",
+            output_file.name,
+            "--directory",
+            str(app_dir),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Duplicate FastAPI unique ID 'duplicate_operation'" in result.output
+    assert "/first/items" in result.output
+    assert "/second/items" in result.output
+    assert not output_file.exists()
 
 
 def test_extract_routes_after_include_still_visible():

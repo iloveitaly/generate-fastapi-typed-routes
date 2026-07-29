@@ -3,6 +3,7 @@
 import shutil
 import subprocess
 import sys
+from collections import Counter, defaultdict
 from pathlib import Path
 from types import ModuleType
 
@@ -21,6 +22,8 @@ MODULE_TEMPLATE = '''\
 """Auto-generated typed url_path_for functions for FastAPI apps."""
 
 from typing import overload, Literal
+from fastapi.routing import APIRoute, iter_route_contexts
+from starlette.routing import NoMatchFound
 {% for app_info in apps %}
 from {{ app_info.import_path }} import {{ app_info.name }}
 {% endfor %}
@@ -29,11 +32,28 @@ from {{ app_info.import_path }} import {{ app_info.name }}
 # Routes for {{ app_info.name }}
 {% for route in app_info.routes %}
 @overload
-def {{ app_info.prefix }}_url_path_for(name: Literal["{{ route.name }}"], **path_params) -> str: ...
+def {{ app_info.prefix }}_url_path_for(name: Literal["{{ route.generated_name }}"], **path_params) -> str: ...
 {% endfor %}
+
+_{{ app_info.prefix }}_route_aliases = {
+{% for route in app_info.routes if route.uses_unique_id %}
+    "{{ route.generated_name }}": "{{ route.unique_id }}",
+{% endfor %}
+}
 
 def {{ app_info.prefix }}_url_path_for(name: str, **path_params) -> str:
     """Type-safe wrapper around {{ app_info.name }}.url_path_for() with overloads for all routes."""
+    route_unique_id = _{{ app_info.prefix }}_route_aliases.get(name)
+    if route_unique_id is not None:
+        for route_context in iter_route_contexts({{ app_info.name }}.routes):
+            route = route_context.original_route
+            if (
+                isinstance(route, APIRoute)
+                and route_context.unique_id == route_unique_id
+            ):
+                return route_context.url_path_for(route.name, **path_params)
+        raise NoMatchFound(name, path_params)
+
     return {{ app_info.name }}.url_path_for(name, **path_params)
 
 {% endfor %}
@@ -43,6 +63,9 @@ def {{ app_info.prefix }}_url_path_for(name: str, **path_params) -> str:
 class RouteInfo(BaseModel):
     name: str
     path: str
+    unique_id: str
+    generated_name: str
+    uses_unique_id: bool = False
 
 
 class AppInfo(BaseModel):
@@ -50,6 +73,49 @@ class AppInfo(BaseModel):
     name: str
     prefix: str
     routes: list[RouteInfo]
+
+
+class DuplicateGeneratedRouteNameError(ValueError):
+    """Raised when FastAPI route metadata cannot produce unique typed names."""
+
+
+def _assign_generated_route_names(routes: list[RouteInfo]) -> list[RouteInfo]:
+    """Use FastAPI unique IDs only when route names are ambiguous."""
+    name_counts = Counter(route.name for route in routes)
+    resolved_routes = [
+        route.model_copy(
+            update={
+                "generated_name": (
+                    route.unique_id if name_counts[route.name] > 1 else route.name
+                ),
+                "uses_unique_id": name_counts[route.name] > 1,
+            }
+        )
+        for route in routes
+    ]
+
+    routes_by_generated_name: dict[str, list[RouteInfo]] = defaultdict(list)
+    for route in resolved_routes:
+        routes_by_generated_name[route.generated_name].append(route)
+
+    collisions = {
+        name: conflicting_routes
+        for name, conflicting_routes in routes_by_generated_name.items()
+        if len(conflicting_routes) > 1
+    }
+    if not collisions:
+        return resolved_routes
+
+    details = ["Unable to generate unique typed route names:"]
+    for generated_name, conflicting_routes in sorted(collisions.items()):
+        if all(route.uses_unique_id for route in conflicting_routes):
+            details.append(f"Duplicate FastAPI unique ID '{generated_name}':")
+        else:
+            details.append(f"Generated route name collision '{generated_name}':")
+        for route in sorted(conflicting_routes, key=lambda item: item.path):
+            details.append(f"  - {route.name}: {route.path}")
+
+    raise DuplicateGeneratedRouteNameError("\n".join(details))
 
 
 def extract_routes(app: FastAPI) -> list[RouteInfo]:
@@ -74,11 +140,14 @@ def extract_routes(app: FastAPI) -> list[RouteInfo]:
                 name=route.name,
                 # Prefer effective path (includes prefixes from include_router)
                 path=route_context.path or route.path,
+                unique_id=route_context.unique_id,
+                generated_name=route.name,
             )
         )
 
     # Sort for consistent output
-    routes.sort(key=lambda x: x.name)
+    routes.sort(key=lambda route: (route.name, route.path, route.unique_id))
+    routes = _assign_generated_route_names(routes)
 
     log.info("extracted_routes", count=len(routes))
     return routes
