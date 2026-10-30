@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.4.0...v0.4.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **ci:** check plural releases_created output for publishing ([5b1c9df](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/5b1c9df7df704b24d2558a92c0ce54f78b977929))
+* evaluate release_created output and sync uv.lock ([5b1c9df](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/5b1c9df7df704b24d2558a92c0ce54f78b977929))
+
 ## [0.4.0](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.3.4...v0.4.0) (2026-07-29)
 
 
