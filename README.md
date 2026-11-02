@@ -65,6 +65,12 @@ and the unique ID used in the generated helper.
 *   **Refactoring Safe:** Change a route name in your app, and your type checker (mypy, pyright) will flag every place usage that needs updating.
 *   **Multi-App Support:** Easily manage routes for projects with multiple FastAPI instances.
 
+## Local CLI development
+
+Run `just install_editable` to install this checkout globally in editable mode. Source changes are reflected without reinstalling.
+
+This requires `uv`, `just`, `zsh`, and `jq`. If mise is available, the recipe also updates every installed `pipx:generate-fastapi-typed-routes` environment so mise can use the local checkout. Re-run after mise upgrades, which replace those editable installations.
+
 # [MIT License](LICENSE.md)
 
 ---

@@ -5,6 +5,14 @@ description = "Generate typed url_path_for functions for FastAPI applications."
 keywords = ["fastapi", "typing", "routes", "codegen"]
 readme = "README.md"
 requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
 dependencies = [
     "click>=8.3.1",
     "fastapi>=0.137.0",
@@ -22,7 +30,7 @@ generate-fastapi-typed-routes = "generate_fastapi_typed_routes:main"
 
 
 [build-system]
-requires = ["uv_build>=0.11.0,<0.12"]
+requires = ["uv_build>=0.11.0,<0.14"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -37,6 +45,7 @@ dev = [
     "coverage>=7.13.4",
     "pytest-cov>=7.0.0",
     "covdefaults>=2.3.0",
+    "beautiful-traceback>=1.0.2",
 ]
 
 [tool.pyright]
