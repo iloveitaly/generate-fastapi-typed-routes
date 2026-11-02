@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.4.1...v0.5.0) (2026-11-02)
+
+
+### Features
+
+* bump minimum required Python version to 3.12 ([33e8870](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/33e88709158de746dda67d3d480de788919c6153))
+
+
+### Bug Fixes
+
+* **ci:** remove unused releases_created output check ([c8307ac](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/c8307ac570a5e3b00aa4b04cf046e4550f9dc69b))
+* make beautiful-traceback optional for older Python versions ([4fbc46e](https://github.com/iloveitaly/generate-fastapi-typed-routes/commit/4fbc46e205693f01cd06ad4c15d7968b3a2e44ce))
+
 ## [0.4.1](https://github.com/iloveitaly/generate-fastapi-typed-routes/compare/v0.4.0...v0.4.1) (2026-10-30)
 
 
