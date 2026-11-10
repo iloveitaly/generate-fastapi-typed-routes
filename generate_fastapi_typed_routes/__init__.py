@@ -19,7 +19,9 @@ from .version import __version__
 log = configure_logger()
 
 MODULE_TEMPLATE = '''\
-"""Auto-generated typed url_path_for functions for FastAPI apps."""
+"""
+Auto-generated typed url_path_for functions for FastAPI apps.
+"""
 
 from typing import overload, Literal
 from fastapi.routing import APIRoute, iter_route_contexts

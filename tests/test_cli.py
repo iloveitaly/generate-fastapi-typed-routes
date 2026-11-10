@@ -35,6 +35,9 @@ def test_generate_routes(tmp_path):
     assert output_file.exists()
 
     content = output_file.read_text()
+    assert content.startswith(
+        '"""\nAuto-generated typed url_path_for functions for FastAPI apps.\n"""'
+    )
     assert "from sample_app import app" in content
     assert (
         'def app_url_path_for(name: Literal["create_user"], **path_params) -> str: ...'
